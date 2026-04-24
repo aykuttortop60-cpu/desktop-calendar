@@ -1,0 +1,13 @@
+# Python sanal ortamı — paylaşılmaz
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Kişisel veritabanı — paylaşılmaz
+*.db
+
+# PyInstaller çıktıları
+dist/
+build/
+*.spec
