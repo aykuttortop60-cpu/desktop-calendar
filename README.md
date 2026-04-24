@@ -66,8 +66,12 @@ desktop-calendar/
 ---
 
 ## 🖼️ Ekran Görüntüleri
+Kapalı Hali: 
+<img width="106" height="103" alt="kapalıHal" src="https://github.com/user-attachments/assets/fc6cbff0-c906-4944-ae7d-07ed97d1a446" />
 
-> *(Ekran görüntüleri eklenecek)*
+Takvim Açık Hali : 
+<img width="641" height="860" alt="Açık Hal" src="https://github.com/user-attachments/assets/330477d1-aae7-4baf-b4c5-7cd62780671b" />
+
 
 ---
 
