@@ -7,6 +7,9 @@ window.py — Ana takvim penceresi
 """
 
 import calendar
+import os
+import sys
+import winreg
 from datetime import date, datetime
 
 from PyQt6.QtCore import Qt, QDate, QRectF, pyqtSignal, QSettings
@@ -20,6 +23,44 @@ from PyQt6.QtWidgets import (
 
 import database as db
 from dialogs import NoteDialog
+
+
+# ── Otomatik başlangıç yardımcıları (Registry) ───────────────────────────────
+_REG_KEY  = r"Software\Microsoft\Windows\CurrentVersion\Run"
+_REG_NAME = "MasaustuTakvim"
+
+
+def _autostart_enabled() -> bool:
+    try:
+        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, _REG_KEY, 0,
+                             winreg.KEY_QUERY_VALUE)
+        winreg.QueryValueEx(key, _REG_NAME)
+        winreg.CloseKey(key)
+        return True
+    except OSError:
+        return False
+
+
+def _set_autostart(enabled: bool) -> None:
+    try:
+        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, _REG_KEY, 0,
+                             winreg.KEY_SET_VALUE)
+        if enabled:
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            venv_py = os.path.join(script_dir, ".venv", "Scripts", "pythonw.exe")
+            if not os.path.exists(venv_py):
+                venv_py = sys.executable
+            main_py = os.path.join(script_dir, "main.py")
+            cmd = f'"{venv_py}" "{main_py}"'
+            winreg.SetValueEx(key, _REG_NAME, 0, winreg.REG_SZ, cmd)
+        else:
+            try:
+                winreg.DeleteValue(key, _REG_NAME)
+            except OSError:
+                pass
+        winreg.CloseKey(key)
+    except OSError:
+        pass
 
 # ── Türkçe ay / gün adları ────────────────────────────────────────────────
 DAYS_TR   = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"]
@@ -874,6 +915,23 @@ class CalendarWindow(QWidget):
         )
         bl.addWidget(theme_combo)
 
+        # Otomatik başlangıç
+        sep_auto = QFrame()
+        sep_auto.setFrameShape(QFrame.Shape.HLine)
+        sep_auto.setStyleSheet("background:rgba(255,255,255,16);max-height:1px;border:none;")
+        bl.addWidget(sep_auto)
+
+        auto_cb = QCheckBox("Bilgisayar açılışında otomatik başlat")
+        auto_cb.setChecked(_autostart_enabled())
+        auto_cb.setStyleSheet(
+            "QCheckBox{color:rgba(255,255,255,200);font-size:12px;background:transparent;border:none;}"
+            "QCheckBox::indicator{width:15px;height:15px;border-radius:4px;"
+            "border:1px solid rgba(255,255,255,50);background:rgba(255,255,255,10);}"
+            "QCheckBox::indicator:checked{background:rgba(90,150,255,210);"
+            "border-color:rgba(90,150,255,255);}"
+        )
+        bl.addWidget(auto_cb)
+
         # Ayırıcı ve geliştirici bilgisi
         sep2 = QFrame()
         sep2.setFrameShape(QFrame.Shape.HLine)
@@ -928,6 +986,7 @@ class CalendarWindow(QWidget):
             self._settings.setValue("cal_name", new_name)
             self._title_lbl.setText(f"📅  {new_name}")
             self._apply_theme(theme_combo.currentText())
+            _set_autostart(auto_cb.isChecked())
 
     # ── geçmiş notlar penceresi ───────────────────────────────────────────
     def _show_overdue(self):
